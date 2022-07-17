@@ -1,101 +1,70 @@
 #include "monty.h"
-
 /**
- * free_stk - function to free stack
- * @stk: stack
- * @linenum: line number
+ * pop - removes the top element of the stack
+ * @head: pointer to a pointer to a struct of type stack_t
+ * @line_number: line number of instruction
+ *
  * Return: void
  */
-void free_stk(stack_t **stk, unsigned int linenum)
+void pop(stack_t **head, unsigned int line_number)
 {
-	if (stk == NULL)
-		return;
-	while (*stk != NULL)
-		pop(stk, linenum);
+	stack_t *tmp = NULL;
+
+	if (!*head)
+	{
+		fprintf(stderr, "L%u: can't pop an empty stack\n", line_number);
+		free_everything();
+		exit(EXIT_FAILURE);
+	}
+	tmp = *head;
+	*head = (*head)->next;
+	free(tmp);
+	if (*head)
+		(*head)->prev = NULL;
 }
-
 /**
- * _queue - FIFO
- * @stk: stack
- * @linenum: line number
+ * add - adds top two elements of stack
+ * @head: pointer to a pointer to a struct of type stack_t
+ * @line_number: line number of instruction
+ *
  * Return: void
  */
-void _queue(stack_t **stk, unsigned int linenum)
+void add(stack_t **head, unsigned int line_number)
 {
-	stack_t *new = NULL;
-	stack_t *old = NULL;
+	int sum = 0;
+	int counter = 0;
+	stack_t *current = *head;
+	stack_t *tmp = NULL;
 
-	if (stk == NULL)
-		exit(EXIT_FAILURE);
-
-	new = malloc(sizeof(stack_t));
-
-	if (new == NULL)
+	while (current)
 	{
-		printf("Error: malloc failed\n");
-		free_stk(stk, linenum);
+		counter++;
+		current = current->next;
+	}
+	if (counter < 2)
+	{
+		fprintf(stderr, "L%u: can't add, stack too short\n",
+			line_number);
+		free_everything();
 		exit(EXIT_FAILURE);
 	}
-
-	new->n = variables.holder;
-	new->next = NULL;
-
-	if (*stk == NULL)
-	{
-		new->prev = NULL;
-		*stk = new;
-		return;
-	}
-
-	old = *stk;
-
-	while (old->next != NULL)
-		old = old->next;
-
-	old->next = new;
-	new->prev = old;
-	variables.holder = (*stk)->n;
+	sum += (*head)->n;
+	sum += (*head)->next->n;
+	tmp = *head;
+	(*head)->next->n = sum;
+	*head = (*head)->next;
+	free(tmp);
+	(*head)->prev = NULL;
 }
-
 /**
- * _queue - FIFO
- * @stk: stack
- * @linenum: line number
+ * nop - doesn’t do anything
+ * @head: pointer to a pointer to a struct of type stack_t
+ * @line_number: line number of instruction
+ *
  * Return: void
  */
-void _queue(stack_t **stk, unsigned int linenum)
+void nop(stack_t **head, unsigned int line_number)
 {
-	stack_t *new = NULL;
-	stack_t *old = NULL;
-
-	if (stk == NULL)
-		exit(EXIT_FAILURE);
-
-	new = malloc(sizeof(stack_t));
-
-	if (new == NULL)
-	{
-		printf("Error: malloc failed\n");
-		free_stk(stk, linenum);
-		exit(EXIT_FAILURE);
-	}
-
-	new->n = variables.holder;
-	new->next = NULL;
-
-	if (*stk == NULL)
-	{
-		new->prev = NULL;
-		*stk = new;
-		return;
-	}
-
-	old = *stk;
-
-	while (old->next != NULL)
-		old = old->next;
-
-	old->next = new;
-	new->prev = old;
-	variables.holder = (*stk)->n;
+	(void)head;
+	(void)line_number;
 }

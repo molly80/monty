@@ -1,98 +1,113 @@
 #include "monty.h"
-
 /**
- * pchar - function to print first char in the top of stack
- * @stk: stack
- * @linenum: line number
- * Return: void
+ * montyprocess - processes monty instructions
+ *
+ * Return: 0 on success, EXIT_FAILURE on error
  */
-void pchar(stack_t **stk, unsigned int linenum)
+int montyprocess(void)
 {
-	if (stk == NULL || *stk == NULL)
+	helpy.queueflag = 0;
+
+	while ((getline(&helpy.buffer, &helpy.n, helpy.fp)) != EOF)
 	{
-		printf("L%d: can't pchar, stack empty\n", linenum);
+		helpy.line_number++;
+		helpy.token1 = strtok(helpy.buffer, " \n");
+		if (helpy.token1 == NULL || helpy.token1[0] == '#')
+			continue;
+		if (strcmp(helpy.token1, "queue") == 0)
+		{
+			helpy.queueflag = 1;
+			continue;
+		}
+		if (strcmp(helpy.token1, "stack") == 0)
+		{
+			helpy.queueflag = 0;
+			continue;
+		}
+		if (strcmp(helpy.token1, "push") == 0)
+		{
+			helpy.token2 = strtok(NULL, " \n");
+			if (helpy.token2 == NULL)
+			{
+				fprintf(stderr, "L%lu: usage: push integer\n", helpy.line_number);
+				free_everything();
+				exit(EXIT_FAILURE);
+			}
+			_isnumber();
+		}
+		montycompare();
+	}
+	return (0);
+}
+/**
+ * montycompare - compares monty instructions to opcodes and calls functions
+ *
+ * Return: 0 on success, EXIT_FAILURE on error
+ */
+int montycompare(void)
+{
+	int i = 0;
+	instruction_t instructions[] = {{"push", push}, {"sub", sub}, {"pstr", pstr},
+					{"div", divi}, {"mul", mul}, {"pall", pall},
+					{"pint", pint}, {"nop", nop}, {"pchar", pchar},
+					{"mod", mod}, {"pop", pop}, {"swap", sw},
+					{"add", add}, {"rotl", rotl}
+					, {"rotr", rotr}, {NULL, NULL}};
+	i = 0;
+	while (instructions[i].opcode != NULL)
+	{
+		if (strcmp(instructions[i].opcode, helpy.token1) == 0)
+		{
+			instructions[i].f(&helpy.head, helpy.line_number);
+			break;
+		}
+		i++;
+	}
+	if (instructions[i].opcode == NULL)
+	{
+		fprintf(stderr, "L%lu: unknown instruction %s\n",
+			helpy.line_number, helpy.token1);
+		free_everything();
 		exit(EXIT_FAILURE);
 	}
-	if (isascii(variables.holder))
-		printf("%c\n", variables.holder);
-	else
+	return (0);
+}
+
+/**
+ * free_everything - frees allocated memory
+ */
+void free_everything(void)
+{
+	free(helpy.buffer);
+	free_dlistint(helpy.head);
+	fclose(helpy.fp);
+}
+/**
+ * _isnumber - determines if string is number
+ * Return: 0 on success, exits on failure
+ */
+int _isnumber(void)
+{
+	int i = 0;
+
+	if ((!isdigit(helpy.token2[0]) && helpy.token2[0] != '-')
+	    || (helpy.token2[0] == '-' && helpy.token2[1] == '\0'))
 	{
-		printf("L%d: can't pchar, value out of range\n", linenum);
+		fprintf(stderr, "L%lu: usage: push integer\n",
+			helpy.line_number);
+		free_everything();
 		exit(EXIT_FAILURE);
 	}
-}
-
-/**
- * pstr - prints string
- * @stk: stack
- * @linenum: unused
- * Return: void
- */
-void pstr(stack_t **stk, __attribute__((unused)) unsigned int linenum)
-{
-	stack_t *str;
-
-	if (stk == NULL || *stk == NULL || variables.holder == 0)
+	i = 1;
+	while (helpy.token2[i])
 	{
-		printf("\n");
-		return;
+		if (!isdigit(helpy.token2[i]))
+		{
+			fprintf(stderr, "L%lu: usage: push integer\n", helpy.line_number);
+			free_everything();
+			exit(EXIT_FAILURE);
+		}
+		i++;
 	}
-
-	str = *stk;
-
-	while (str != NULL && str->n != 0 && isascii(str->n))
-	{
-		printf("%c", str->n);
-		str = str->next;
-	}
-	printf("\n");
-
-}
-
-/**
- * rotl - rotates stack from top to bottom once
- * @stk: stack
- * @linenum: unused
- * Return: void
- */
-void rotl(stack_t **stk, __attribute__((unused))unsigned int linenum)
-{
-	stack_t *new;
-
-	if (stk == NULL || *stk == NULL || (*stk)->next == NULL)
-		return;
-	new = *stk;
-
-	while (new->next != NULL)
-		new = new->next;
-
-	new->next = *stk;
-	(*stk)->prev = new;
-	*stk = (*stk)->next;
-	(*stk)->prev = NULL;
-	new->next->next = NULL;
-}
-
-/**
- * rotr - function to rotate bottom to the top once
- * @stk: stack
- * @linenum: unused
- * Return: void
- */
-void rotr(stack_t **stk, __attribute__((unused))unsigned int linenum)
-{
-	stack_t *rev;
-
-	if (stk == NULL || *stk == NULL || (*stk)->next == NULL)
-		return;
-
-	rev = *stk;
-
-	while (rev->next != NULL)
-		rev = rev->next;
-	rev->next = *stk;
-	rev->prev->next = NULL;
-	rev->prev = NULL;
-	(*stk)->prev = rev;
-	*stk = rev;
+	return (0);
 }

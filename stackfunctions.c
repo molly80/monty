@@ -1,124 +1,113 @@
 #include "monty.h"
-
 /**
- * push - adds to the beginning of the stack
- * @stk: top of stack
- * @linenum: line number for the passed token
+ * pstr - prints the string starting at the top of the stack
+ * @head: pointer to a pointer to a struct of type stack_t
+ * @line_number: line number of instruction
+ *
  * Return: void
  */
-void push(stack_t **stk, unsigned int linenum)
+void pstr(stack_t **head, unsigned int line_number)
 {
-	stack_t *new;
+	stack_t *current = *head;
+	(void)line_number;
 
-	if (stk == NULL)
+	if (!*head)
 	{
-		printf("L%d: unknown stack\n", linenum);
-		exit(EXIT_FAILURE);
+		putchar('\n');
+		return;
 	}
-
-	new = malloc(sizeof(stack_t));
-
-	if (new == NULL)
+	while (current)
 	{
-		printf("Error: malloc failed\n");
-		free_stk(stk, linenum);
-		exit(EXIT_FAILURE);
+		if ((current)->n != 0 && (current)->n >= 0 && (current)->n <= 127)
+		{
+			putchar((current)->n);
+			current = current->next;
+		}
+		else
+			break;
 	}
-	new->n = variables.holder;
-	new->prev = NULL;
-	new->next = *stk;
-
-	if (*stk != NULL)
-		(*stk)->prev = new;
-	*stk = new;
+	putchar('\n');
 }
-
 /**
- * pall - function prints all of stack
- * @stk: top of stack
- * @linenum: line number
+ * rotl - rotates the stack to the top
+ * @head: pointer to a pointer to a struct of type stack_t
+ * @line_number: line number of instruction
+ *
  * Return: void
  */
-void pall(stack_t **stk, unsigned int linenum)
+void rotl(stack_t **head, unsigned int line_number)
 {
-	stack_t *print;
-
-	if (stk == NULL)
+	stack_t *back = *head;
+	stack_t *current = *head;
+	(void)line_number;
+	if (*head && (*head)->next)
 	{
-		printf("L%d: invalid stack\n", linenum);
-		exit(EXIT_FAILURE);
-	}
-
-	print = *stk;
-
-	while (print != NULL)
-	{
-		printf("%d\n", print->n);
-		print = print->next;
+		*head = (*head)->next;
+		(*head)->prev = NULL;
+		while (current->next)
+		{
+			current = current->next;
+		}
+		back->next = current->next;
+		back->prev = current;
+		current->next = back;
 	}
 }
-
 /**
- * pop - function to pop the top of stack
- * @stk: top of stack
- * @linenum: line number
+ * rotr - rotates the stack to the bottom
+ * @head: pointer to a pointer to a struct of type stack_t
+ * @line_number: line number of instruction
+ *
  * Return: void
  */
-void pop(stack_t **stk, unsigned int linenum)
+void rotr(stack_t **head, unsigned int line_number)
 {
-	if (stk == NULL || *stk == NULL)
+	stack_t *front = NULL;
+	stack_t *current = *head;
+	(void)line_number;
+
+	if (*head && (*head)->next)
 	{
-		printf("L%d: can't pop an empty stack\n", linenum);
-		exit(EXIT_FAILURE);
-	}
-	if ((*stk)->next != NULL)
-	{
-		*stk = (*stk)->next;
-		variables.holder = (*stk)->n;
-		free((*stk)->prev);
-		(*stk)->prev = NULL;
-	}
-	else
-	{
-		free(*stk);
-		*stk = NULL;
+		while (current->next)
+			current = current->next;
+		current->prev->next = NULL;
+		front = current;
+		front->next = *head;
+		front->prev = NULL;
+		*head = front;
 	}
 }
-
 /**
- * pint - function prints the value at the top of the stack
- * @stk: stack
- * @linenum: line number
+ * queuepush - adds a new node at the end of a stack_t list
+ * @head: pointer to a pointer to a stack_t struct
+ * @line_number: number of instruction
  * Return: void
  */
-void pint(stack_t **stk, unsigned int linenum)
+int queuepush(stack_t **head, unsigned int line_number)
 {
-	if (stk == NULL || *stk == NULL)
+	stack_t *newnode = NULL;
+	stack_t  *current = *head;
+	(void)line_number;
+
+	newnode = malloc(sizeof(stack_t));
+	if (!newnode)
 	{
-		printf("L%d: can't pint, stack empty\n", linenum);
+		fprintf(stderr, "Error: malloc failed\n");
+		free_everything();
 		exit(EXIT_FAILURE);
 	}
-	else
-		printf("%d\n", (*stk)->n);
-}
-
-/**
- * swap - swapping first two elements on top of stack
- * @stk: stack
- * @linenum: line number
- * Return: void
- */
-void swap(stack_t **stk, unsigned int linenum)
-{
-	int temp;
-
-	if (stk == NULL || *stk == NULL || (*stk)->next == NULL)
+	newnode->n = atoi(helpy.token2);
+	newnode->next = NULL;
+	newnode->prev = NULL;
+	if (!*head)
 	{
-		printf("L%d: can't swap, stack too short\n", linenum);
-		free_stk(stk, linenum);
-		exit(EXIT_FAILURE);
+		newnode->next = *head;
+		*head = newnode;
+		return (0);
 	}
-	temp = (*stk)->n;
-	(*stk)->n = (*stk)->next->n;
-	(*stk)->next->n = temp;
+	while (current->next != NULL)
+		current = current->next;
+	newnode->prev = current;
+	current->next = newnode;
+	return (0);
 }

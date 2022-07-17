@@ -1,75 +1,122 @@
 #include "monty.h"
-
 /**
- * _ops - compare functions to tokens and executes them
- * @token: command recieved
- * @stk: stack
- * @linenum: number of line
- * Return: void
+ * push - adds a new node at the beginning of a dlistint_t list
+ * @head: pointer to a pointer to a struct of type stack_t
+ * @line_number: line_number of instruction
+ * Return: address of new element
  */
-void _ops(char *token, stack_t **stk, unsigned int linenum)
+void push(stack_t **head, unsigned int line_number)
 {
-	int a = 0;
+	stack_t *newnode = NULL;
+	int num = 0;
+	int result = 1;
 
-	instruction_t op[] = {
-		{"push", push},
-		{"pall", pall},
-		{"pint", pint},
-		{"pop", pop},
-		{"swap", swap},
-		{"add", add},
-		{"nop", nop},
-		{"sub", sub},
-		{"div", _div},
-		{"mul", mul},
-		{"mod", mod},
-		{"pchar", pchar},
-		{"pstr", pstr},
-		{"rotl", rotl},
-		{"rotr", rotr},
-		{NULL, NULL}
-	};
-
-	if (strcmp(token, "stack") == 0)
+	(void)line_number;
+	if (helpy.queueflag == 1)
+		result = queuepush(&helpy.head, helpy.line_number);
+	if (result == 0)
+		return;
+	if (!head)
 	{
-		variables.check = 0;
+		free_everything();
+		exit(1);
+	}
+	newnode = malloc(sizeof(stack_t));
+	if (newnode == NULL)
+	{
+		fprintf(stderr, "Error: malloc failed\n");
+		free_everything();
+		exit(EXIT_FAILURE);
+	}
+	num = atoi(helpy.token2);
+	newnode->n = num;
+	newnode->prev = NULL;
+	newnode->next = NULL;
+	if (!*head)
+	{
+		*head = newnode;
 		return;
 	}
-
-	if (strcmp(token, "queue") == 0)
-	{
-		variables.check = 1;
-		return;
-	}
-
-	if (variables.check == 1 && strcmp(token, "push") == 0)
-	{
-		_queue(stk, linenum);
-		return;
-	}
-
-	while (op[a].opcode != NULL)
-	{
-		if (strcmp(token, op[a].opcode) == 0)
-		{
-			op[a].f(stk, linenum);
-			return;
-		}
-		a++;
-	}
-	printf("L%d: unknown instruction %s\n", linenum, token);
-	free_stk(stk, linenum);
-	exit(EXIT_FAILURE);
+	newnode->next = *head;
+	(*head)->prev = newnode;
+	*head = newnode;
 }
 
 /**
- * nop - function does nothing
- * @stk: stack
- * @linenum: line number
+ * pall - prints all the elements of a stack_t list
+ * @head: pointer to a struct of type stack_t
+ * @line_number: line number of instruction
+ * Return: number of nodes
+ */
+void pall(stack_t **head, unsigned int line_number)
+{
+	stack_t *tmp = *head;
+	(void)line_number;
+
+	while (*head)
+	{
+		printf("%d\n", (*head)->n);
+		*head = (*head)->next;
+	}
+	*head = tmp;
+}
+/**
+ * free_dlistint - free a dlistint_t list
+ * @head: pointer to stack_t struct
+ */
+void free_dlistint(stack_t *head)
+{
+	stack_t *tmp = NULL;
+
+	while (head)
+	{
+		tmp = head->next;
+		free(head);
+		head = tmp;
+	}
+}
+/**
+ * pint - prints first element of a dlistint_t list
+ * @head: pointer to a pointer to a struct of type stack_t
+ * @line_number: line number of instruction
  * Return: void
  */
-void nop(stack_t **stk, unsigned int linenum)
+void pint(stack_t **head, unsigned int line_number)
 {
-	(void)stk;
-	(void)linenum;
+	if (*head)
+		printf("%d\n", (*head)->n);
+	else
+	{
+		fprintf(stderr, "L%u: can't pint, stack empty\n", line_number);
+		free_everything();
+		exit(EXIT_FAILURE);
+	}
+}
+/**
+ * sw - swaps the top two elements of the stack
+ * @head: pointer to a pointer to a struct of type stack_t
+ * @line_number: line number of instruction
+ * Return: void
+ */
+void sw(stack_t **head, unsigned int line_number)
+{
+	int tmp;
+	stack_t *current = *head;
+	int counter = 0;
+
+	while (current)
+	{
+		counter++;
+		current = current->next;
+	}
+	if (counter < 2)
+	{
+		fprintf(stderr, "L%u: can't swap, stack too short\n",
+			line_number);
+		free_everything();
+		exit(EXIT_FAILURE);
+	}
+	tmp = (*head)->n;
+	(*head)->n = (*head)->next->n;
+	(*head)->next->n = tmp;
 }
